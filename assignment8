@@ -1,0 +1,108 @@
+#include <stdio.h>
+#include <string.h>
+
+// Structure to store IoT sensor details
+struct Sensor {
+    int id;
+    char type[20];      // Temperature, Humidity, Voltage, Current
+    float reading;
+    float min_limit;
+    float max_limit;
+};
+
+// User-defined function prototypes using pointers
+void inputSensors(struct Sensor *s, int n);
+void displayReport(const struct Sensor *s, int n);
+void analyzeData(const struct Sensor *s, int n);
+
+int main() {
+    struct Sensor sensors[50];
+    int n;
+
+    printf("=== Industrial IoT Sensor Monitoring System ===\n");
+    printf("Enter the number of IoT sensors (max 50): ");
+    scanf("%d", &n);
+
+    if (n <= 0 || n > 50) {
+        printf("Invalid number of sensors. Exiting program.\n");
+        return 1;
+    }
+
+    // Pass array base address (pointer) to functions
+    inputSensors(sensors, n);
+    displayReport(sensors, n);
+    analyzeData(sensors, n);
+
+    return 0;
+}
+
+// Function to read sensor records using pointer arithmetic
+void inputSensors(struct Sensor *s, int n) {
+    for (int i = 0; i < n; i++) {
+        printf("\n--- Enter Details for Sensor %d ---\n", i + 1);
+        printf("Sensor ID: ");
+        scanf("%d", &(s + i)->id);
+
+        printf("Sensor Type (Temperature/Humidity/Voltage/Current): ");
+        scanf("%s", (s + i)->type);
+
+        printf("Current Reading: ");
+        scanf("%f", &(s + i)->reading);
+
+        printf("Safe Range (Min Limit Max Limit): ");
+        scanf("%f %f", &(s + i)->min_limit, &(s + i)->max_limit);
+    }
+}
+
+// Function to display all sensor records and check threshold status
+void displayReport(const struct Sensor *s, int n) {
+    printf("\n====================================================================\n");
+    printf("                    IOT SENSOR DIAGNOSTIC REPORT                    \n");
+    printf("====================================================================\n");
+    printf("%-8s %-15s %-12s %-18s %-12s\n", "ID", "Type", "Reading", "Safe Range", "Status");
+    printf("--------------------------------------------------------------------\n");
+
+    for (int i = 0; i < n; i++) {
+        const struct Sensor *curr = (s + i); // Pointer to current sensor
+        int isNormal = (curr->reading >= curr->min_limit && curr->reading <= curr->max_limit);
+
+        printf("%-8d %-15s %-12.2f %.1f - %-11.1f %-12s\n",
+               curr->id,
+               curr->type,
+               curr->reading,
+               curr->min_limit,
+               curr->max_limit,
+               isNormal ? "NORMAL" : "ALERT!");
+    }
+    printf("====================================================================\n");
+}
+
+// Function to analyze overall system health and statistics
+void analyzeData(const struct Sensor *s, int n) {
+    int normalCount = 0, alertCount = 0;
+    float sum = 0.0;
+    const struct Sensor *maxSensor = s; // Assume first sensor has highest reading
+
+    for (int i = 0; i < n; i++) {
+        const struct Sensor *curr = (s + i);
+        sum += curr->reading;
+
+        if (curr->reading >= curr->min_limit && curr->reading <= curr->max_limit) {
+            normalCount++;
+        } else {
+            alertCount++;
+        }
+
+        if (curr->reading > maxSensor->reading) {
+            maxSensor = curr;
+        }
+    }
+
+    printf("\n--- System Data Analysis ---\n");
+    printf("Total Sensors Monitored : %d\n", n);
+    printf("Sensors in Safe Range   : %d\n", normalCount);
+    printf("Sensors Triggering Alert: %d\n", alertCount);
+    printf("Average Sensor Reading  : %.2f\n", sum / n);
+    printf("Highest Recorded Value  : %.2f (Sensor ID: %d - %s)\n",
+           maxSensor->reading, maxSensor->id, maxSensor->type);
+}
